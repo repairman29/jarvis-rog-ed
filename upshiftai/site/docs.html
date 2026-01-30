@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How it works — UpshiftAI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a href="." class="logo">UpshiftAI</a>
+      <nav>
+        <a href=".">Home</a>
+        <a href="docs.html">How it works</a>
+        <a href="dev.html">Developers</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="https://github.com/repairman29/CLAWDBOT/tree/main/upshiftai" class="nav-cta" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="docs-content">
+    <div class="wrap">
+      <h1>How it works</h1>
+      <p>UpshiftAI analyzes your dependency tree, flags ancient/deprecated/fork-hint packages, and can apply upgrades or replacements with checkpoint, verify, rollback, and optional human-in-the-loop (HITL) and webhooks.</p>
+
+      <h2>What you can run (CLI)</h2>
+      <p>Everything is executable from the CLI. Install once, then run from your project or any path:</p>
+      <ul>
+        <li><strong>analyze</strong> — resolve tree, fetch registry metadata, output JSON/markdown/CSV.</li>
+        <li><strong>report</strong> — full “deep throat” report (direct + transitive, “something old” chains, optional PDF).</li>
+        <li><strong>checkpoint</strong> — save manifest + lockfile so you can roll back later.</li>
+        <li><strong>rollback</strong> — restore from the last checkpoint.</li>
+        <li><strong>apply upgrade</strong> / <strong>apply replace</strong> — upgrade one package or replace one with another (with checkpoint, verify, auto-rollback on failure, and optional HITL/webhooks).</li>
+      </ul>
+
+      <h2>CLI reference (all commands)</h2>
+      <p>Run <code>npx upshiftai-deps</code> or <code>node bin/upshiftai-deps.js</code> from the <code>upshiftai</code> directory.</p>
+
+      <h3>analyze</h3>
+      <pre class="code"><code>upshiftai-deps analyze [path] [--markdown] [--csv] [--no-registry] [--ecosystem=npm|pip|go]</code></pre>
+      <p>Auto-detects npm (package-lock.json), pip (requirements.txt / pyproject.toml), or go (go.mod). Use <code>--no-registry</code> for a fast local run; omit to fetch publish dates and deprecated status.</p>
+
+      <h3>report</h3>
+      <pre class="code"><code>upshiftai-deps report [path] [--output FILE] [--pdf] [--pip-tree FILE.json] [--full-tree] [--no-full-tree] [--project-name NAME] [--project-url URL] [--ecosystem=pip]</code></pre>
+      <p>Full dependency report. For pip, defaults to attempting full transitive tree (venv + pipdeptree). Use <code>--no-full-tree</code> to skip that; use <code>--pip-tree=tree.json</code> to supply existing pipdeptree JSON. <code>--pdf</code> generates a PDF (requires <code>npx md-to-pdf</code>).</p>
+
+      <h3>checkpoint</h3>
+      <pre class="code"><code>upshiftai-deps checkpoint [path] [--reason "..."]</code></pre>
+      <p>Saves <code>package.json</code> + <code>package-lock.json</code> (npm) or <code>pyproject.toml</code> + <code>requirements*.txt</code> (pip) into <code>.upshiftai-tmp/checkpoints/&lt;timestamp&gt;/</code>.</p>
+
+      <h3>rollback</h3>
+      <pre class="code"><code>upshiftai-deps rollback [path] [--dry-run]</code></pre>
+      <p>Restores manifest/lockfile from the latest checkpoint. Use <code>--dry-run</code> to see what would be restored.</p>
+
+      <h3>apply upgrade</h3>
+      <pre class="code"><code>upshiftai-deps apply upgrade &lt;pkg&gt; [path] [--version VER] [--dry-run] [--yes]</code></pre>
+      <p>Checkpoint → upgrade <code>&lt;pkg&gt;</code> to <code>--version</code> (default latest) → <code>npm install</code> → verify (<code>npm ls</code>). On failure, restores checkpoint and emits rollback events. Use <code>--yes</code> to skip approval when config requires it.</p>
+
+      <h3>apply replace</h3>
+      <pre class="code"><code>upshiftai-deps apply replace &lt;old&gt; &lt;new&gt; [path] [--version VER] [--dry-run] [--yes]</code></pre>
+      <p>Checkpoint → remove <code>&lt;old&gt;</code>, add <code>&lt;new&gt;</code> (with optional <code>--version</code>) → <code>npm install</code> → verify. Same rollback and event behavior as upgrade.</p>
+
+      <h2>Config: webhooks &amp; HITL</h2>
+      <p>Put <code>.upshiftai.json</code> in the project root (or set <code>UPSHIFTAI_CONFIG</code> or use <code>--config path</code>). Copy from <code>.upshiftai.example.json</code>.</p>
+      <pre class="code"><code>{
+  "webhooks": ["https://your-server.com/hooks/upshiftai"],
+  "approval": {
+    "mode": "prompt",
+    "requireFor": ["replace", "major"],
+    "webhookUrl": "https://your-server.com/approve",
+    "timeoutMs": 60000
+  }
+}</code></pre>
+      <ul>
+        <li><strong>webhooks</strong> — we POST every event (checkpoint.created, apply.started, apply.completed, apply.failed, rollback.triggered, rollback.completed) to these URLs. Your endpoint can run <code>upshiftai-deps rollback</code> or your own revert on <code>rollback.triggered</code> / <code>apply.failed</code>.</li>
+        <li><strong>approval.mode</strong> — <code>prompt</code> (CLI “y/n”), <code>webhook</code> (POST to <code>webhookUrl</code>; we wait for <code>{ "approved": true }</code>), or <code>none</code>.</li>
+        <li><strong>approval.requireFor</strong> — e.g. <code>["replace", "major"]</code>: replace and major upgrades require approval; patch/minor can run without.</li>
+      </ul>
+
+      <h2>Signals in the report</h2>
+      <table>
+        <thead>
+          <tr><th>Signal</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>age</td><td>Months since last publish (e.g. &gt;24 = ancient).</td></tr>
+          <tr><td>deprecated</td><td>npm <code>deprecated</code> or PyPI deprecated classifier.</td></tr>
+          <tr><td>fork_hint</td><td>Package name suggests a fork (<code>-fork</code>, <code>-legacy</code>, etc.).</td></tr>
+          <tr><td>oldPython</td><td>requires_python indicates Python 2 or very old 3.x.</td></tr>
+          <tr><td>depth</td><td>Depth in tree (root = 0).</td></tr>
+          <tr><td>why</td><td>Which parent(s) pulled in this package.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Output formats</h2>
+      <ul>
+        <li><strong>JSON</strong> — default for <code>analyze</code>; full report for pipelines.</li>
+        <li><strong>--markdown</strong> — human-readable table of problematic packages.</li>
+        <li><strong>--csv</strong> — spreadsheet: name, version, depth, ancient, deprecated, forkHint, reasons, replacement, note.</li>
+        <li><strong>report</strong> — full markdown (and optional <code>--output FILE</code>, <code>--pdf</code>).</li>
+      </ul>
+
+      <h2>Integration</h2>
+      <ul>
+        <li><strong>upshiftai.dev</strong> — Call the CLI or <code>import { analyze, applyNpmUpgrade, ... } from 'upshiftai-deps'</code> and use JSON/events for upgrade suggestions, replace flows, or PR automation.</li>
+        <li><strong>JARVIS / CLAWDBOT</strong> — Install the skill and ask JARVIS to analyze dependencies or find ancient packages.</li>
+        <li><strong>CI</strong> — Run <code>analyze</code> and gate on ancient/deprecated count; run <code>apply</code> with <code>--yes</code> and webhooks for observability and rollback.</li>
+      </ul>
+
+      <h2>Documentation index</h2>
+      <ul>
+        <li><a href="dev.html">Developers</a> — install, CLI at a glance, config, programmatic API, CI, webhooks, env vars.</li>
+        <li><a href="pricing.html">Pricing &amp; packaging</a> — tiers (Free / Pro / Team), packaging (CLI, npm, open source).</li>
+        <li><strong>README</strong> (repo) — quick start, all command summaries, config.</li>
+        <li><strong>docs/DESIGN-SUGGESTIONS-AUTOMATIONS.md</strong> — who benefits, suggestions, automations, HITL, webhooks, rollbacks.</li>
+        <li><strong>.upshiftai.example.json</strong> — example config for webhooks and approval.</li>
+      </ul>
+
+      <h2>Roadmap</h2>
+      <ul>
+        <li>npm lockfile + registry metadata (done)</li>
+        <li>Ancient/legacy/fork heuristics (done)</li>
+        <li>pip requirements.txt + pyproject.toml + PyPI metadata (done)</li>
+        <li>go mod (done)</li>
+        <li>Full report + transitive “something old” chains (done)</li>
+        <li>Checkpoint &amp; rollback (done)</li>
+        <li>Apply upgrade/replace + HITL + webhooks (done)</li>
+        <li>Suggest replacements npm + pip (done)</li>
+        <li>pip apply (upgrade/replace) (planned)</li>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><a href=".">UpshiftAI</a> — ancient dependency lineage. Part of the <a href="https://github.com/repairman29/CLAWDBOT" target="_blank" rel="noopener">CLAWDBOT</a> ecosystem. <a href="https://github.com/sponsors/repairman29" target="_blank" rel="noopener">Sponsor</a> · <a href="pricing.html">Pricing</a></p>
+    </div>
+  </footer>
+</body>
+</html>

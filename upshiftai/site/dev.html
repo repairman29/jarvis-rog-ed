@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Developers — UpshiftAI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a href="." class="logo">UpshiftAI</a>
+      <nav>
+        <a href=".">Home</a>
+        <a href="docs.html">How it works</a>
+        <a href="dev.html">Developers</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="https://github.com/repairman29/CLAWDBOT/tree/main/upshiftai" class="nav-cta" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="docs-content">
+    <div class="wrap">
+      <h1>For developers</h1>
+      <p>Everything you need to install, run, and integrate UpshiftAI: CLI, config, programmatic API, CI, and webhooks.</p>
+
+      <h2>Install</h2>
+      <ul>
+        <li><strong>npx</strong> (no install): <code>npx upshiftai-deps analyze .</code></li>
+        <li><strong>npm</strong>: <code>npm install -g upshiftai-deps</code> then <code>upshiftai-deps &lt;cmd&gt;</code>.</li>
+        <li><strong>From repo</strong>: <code>git clone https://github.com/repairman29/CLAWDBOT.git && cd CLAWDBOT/upshiftai && npm install && node bin/upshiftai-deps.js &lt;cmd&gt;</code>.</li>
+      </ul>
+      <p>Node 18+ required. No backend — runs locally.</p>
+
+      <h2>CLI at a glance</h2>
+      <pre class="code"><code>upshiftai-deps analyze [path] [--markdown] [--csv] [--no-registry] [--ecosystem=npm|pip|go]
+upshiftai-deps report [path] [--output FILE] [--pdf] [--no-full-tree] [--pip-tree FILE.json]
+upshiftai-deps checkpoint [path] [--reason "..."]
+upshiftai-deps rollback [path] [--dry-run]
+upshiftai-deps apply upgrade &lt;pkg&gt; [path] [--version VER] [--dry-run] [--yes]
+upshiftai-deps apply replace &lt;old&gt; &lt;new&gt; [path] [--dry-run] [--yes]</code></pre>
+      <p>Full options: <a href="docs.html">How it works</a>.</p>
+
+      <h2>Config</h2>
+      <p>Project root: <code>.upshiftai.json</code>. Or <code>--config path</code> or env <code>UPSHIFTAI_CONFIG</code>.</p>
+      <pre class="code"><code>{
+  "webhooks": ["https://your-server.com/hooks/upshiftai"],
+  "approval": {
+    "mode": "prompt",
+    "requireFor": ["replace", "major"],
+    "webhookUrl": "https://your-server.com/approve",
+    "timeoutMs": 60000
+  }
+}</code></pre>
+      <ul>
+        <li><strong>webhooks</strong> — we POST every event (checkpoint.created, apply.started, apply.completed, apply.failed, rollback.triggered, rollback.completed).</li>
+        <li><strong>approval.mode</strong> — <code>prompt</code> (CLI y/n), <code>webhook</code> (we POST; you respond <code>{ "approved": true }</code>), <code>none</code>.</li>
+        <li><strong>approval.requireFor</strong> — e.g. <code>["replace", "major"]</code> so replace and major upgrades require approval.</li>
+      </ul>
+      <p>Copy from <code>.upshiftai.example.json</code> in the repo.</p>
+
+      <h2>Programmatic API</h2>
+      <p>From a Node app or script (ESM):</p>
+      <pre class="code"><code>import { analyze, analyzeWithMarkdown, reportToCsv } from 'upshiftai-deps';
+import { createCheckpoint, rollback } from 'upshiftai-deps';
+import { loadConfig } from 'upshiftai-deps';
+import { on, emit } from 'upshiftai-deps';
+import { applyNpmUpgrade, applyNpmReplace } from 'upshiftai-deps';
+
+const report = await analyze('/path/to/project', { fetchRegistry: true });
+const { report: r, markdown } = await analyzeWithMarkdown('/path/to/project');
+const csv = reportToCsv(r, { includeSuggestions: true });
+
+createCheckpoint('/path', { reason: 'before-upgrade' });
+rollback('/path');
+
+on('rollback.triggered', (payload) => console.log('Rollback', payload));
+const result = await applyNpmUpgrade('/path', 'lodash', 'latest', { config: loadConfig('/path') });</code></pre>
+
+      <h2>CI</h2>
+      <pre class="code"><code># Example: analyze and fail if ancient count &gt; threshold
+- run: npx upshiftai-deps analyze . --no-registry
+  # Or with registry: npx upshiftai-deps analyze .
+# Parse JSON and gate (e.g. jq). Or run report and attach artifact:
+- run: npx upshiftai-deps report . --output report.md
+- uses: actions/upload-artifact@v4
+  with: name: dependency-report
+        path: report.md
+
+# Apply with approval skipped (use only if you gate elsewhere):
+- run: npx upshiftai-deps apply upgrade some-pkg . --yes
+  # Set UPSHIFTAI_CONFIG or .upshiftai.json with approval.mode none for full automation.</code></pre>
+
+      <h2>Webhooks (events)</h2>
+      <p>We POST JSON to each URL in <code>webhooks</code>. Body shape: <code>{ event, timestamp, ...payload }</code>.</p>
+      <table>
+        <thead><tr><th>event</th><th>payload</th></tr></thead>
+        <tbody>
+          <tr><td>checkpoint.created</td><td>path, files</td></tr>
+          <tr><td>apply.started</td><td>action, pkg, targetVersion / targetPackage</td></tr>
+          <tr><td>apply.completed</td><td>action, pkg, before, after (or newPkg, newVersion)</td></tr>
+          <tr><td>apply.failed</td><td>action, pkg, error</td></tr>
+          <tr><td>rollback.triggered</td><td>reason, checkpoint</td></tr>
+          <tr><td>rollback.completed</td><td>restored</td></tr>
+        </tbody>
+      </table>
+      <p>Your endpoint can run <code>upshiftai-deps rollback &lt;path&gt;</code> or your own revert on <code>rollback.triggered</code> / <code>apply.failed</code>.</p>
+
+      <h2>Env vars</h2>
+      <ul>
+        <li><code>UPSHIFTAI_CONFIG</code> — path to config file (overrides project <code>.upshiftai.json</code> when set).</li>
+      </ul>
+
+      <h2>Where to read more</h2>
+      <ul>
+        <li><a href="docs.html">How it works</a> — full CLI reference and config.</li>
+        <li><a href="pricing.html">Pricing &amp; packaging</a> — tiers and how we ship.</li>
+        <li>Repo <strong>README</strong> and <strong>docs/DESIGN-SUGGESTIONS-AUTOMATIONS.md</strong> — design and rollout.</li>
+      </ul>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><a href=".">UpshiftAI</a> — ancient dependency lineage. Part of the <a href="https://github.com/repairman29/CLAWDBOT" target="_blank" rel="noopener">CLAWDBOT</a> ecosystem. <a href="https://github.com/sponsors/repairman29" target="_blank" rel="noopener">Sponsor</a> · <a href="pricing.html">Pricing</a></p>
+    </div>
+  </footer>
+</body>
+</html>
