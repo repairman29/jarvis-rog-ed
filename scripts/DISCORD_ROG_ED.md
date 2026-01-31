@@ -86,10 +86,41 @@ You can also run the same three from the repo: `powershell -ExecutionPolicy Bypa
 | "No session found" in DMs | Add a session-store alias (see [DISCORD_SETUP.md — No session found](../DISCORD_SETUP.md)). |
 | "Session Send: failed: timeout" | Reply may still appear in Discord; use a faster model or wait. |
 | Stuck on "processing" / never replies | Your **primary model** may be too slow (e.g. local Ollama 8B). Set primary to a fast model like `groq/llama-3.1-8b-instant` in `%USERPROFILE%\.clawdbot\clawdbot.json` under `agents.defaults.model.primary`, then restart the gateway. |
-| "Context overflow" / prompt too large (CLI or Discord) | Add an explicit **Groq** provider in `clawdbot.json` under `models.providers.groq` with `contextWindow: 131072` for your Groq models (see [JARVIS_ROG_ED.md](../JARVIS_ROG_ED.md) or ROG_ALLY_SETUP). Restart the gateway. |
+| "Context overflow" / prompt too large (CLI or Discord) | 1) In `%USERPROFILE%\.clawdbot\clawdbot.json`: set `agents.defaults.bootstrapMaxChars` to **5000** (or 8000). 2) Set **Ollama** model `contextWindow` to **131072** in `models.providers.ollama.models` so the effective cap is 128K (not 16K). 3) Remove Ollama from `agents.defaults.model.fallbacks` and from `%USERPROFILE%\.clawdbot\agents\main\agent\models.json` (keep only Groq). 4) Restart the gateway. If 70B fallback hits **rate limit (429)**, wait for Groq TPD reset or upgrade tier; use only 8B until then. |
+| **Over a minute, no reply** | 1) Check the **gateway terminal**: any activity when you send a DM? If nothing, Discord isn’t reaching the gateway (token, intents, or pairing). 2) If you see activity but no message: primary model may be slow or Groq may be rate-limited; ensure primary is `groq/llama-3.1-8b-instant` and `GROQ_API_KEY` is set. 3) First message or large context can take 30–60+ seconds; wait a bit longer or send a short message (e.g. “Hi”) to test. |
+| **"is typing..." forever, no reply** | Usually **context overflow**: the run falls back to Ollama (16K) and the prompt is too big. In `%USERPROFILE%\.clawdbot\clawdbot.json` under `agents.defaults.model.fallbacks`, **remove** `ollama/llama3.1` so only Groq (128K) is used. Optionally add `agents.defaults.bootstrapMaxChars: 18000`. Restart the gateway. |
 | Private app / default link error | OAuth2 → Default Authorization Link → **None** → Save; use URL Generator to invite. |
 
 Full details and optional config (guilds, channels): [DISCORD_SETUP.md](../DISCORD_SETUP.md).
+
+---
+
+## Sent "test" (or any message) and nothing?
+
+Run these in order. **Do step 1 first** — it tells you why the bot isn't replying.
+
+1. **Gateway running with visible logs**  
+   In a terminal: `cd` to your JARVIS repo, then run:
+   ```powershell
+   npx clawdbot gateway run
+   ```
+   Leave that window open. Send **test** again in the DM. Watch the terminal:
+   - **No new lines** → Discord isn't reaching the gateway. Do step 2 (doctor + intents), then step 3 (alias).
+   - **"No session found" or session errors** → Add your Discord user ID as an alias (step 3).
+   - **Activity but no message in Discord** → Reply may still appear; if not, add the alias (step 3) and use a fast model (troubleshooting table above).
+
+2. **Enable Discord and intents**  
+   ```powershell
+   npx clawdbot doctor --fix
+   ```
+   In [Discord Developer Portal](https://discord.com/developers/applications) → your app → **Bot** → **Message Content Intent** = **On** → Save. Restart the gateway.
+
+3. **Add your Discord user ID as session alias**  
+   Discord → Developer Mode on → in the DM with the bot, right-click **your** name → **Copy User ID**. Then:
+   ```powershell
+   node scripts\add-discord-alias.js YOUR_DISCORD_USER_ID
+   ```
+   Restart the gateway, then send **test** again.
 
 ---
 
