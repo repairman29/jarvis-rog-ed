@@ -65,6 +65,17 @@ Clawdbot’s gateway uses **skills** and **plugins**; it doesn’t load Cursor�
 
 ---
 
+## Auto-sync (Repo Knowledge)
+
+The repo indexer pushes to Supabase directly (REST) and can be scheduled:
+
+- **Index once:** `node scripts/index-repos.js --repo JARVIS`
+- **Schedule nightly (Windows):** `powershell -ExecutionPolicy Bypass -File scripts/add-repo-index-schedule.ps1`
+
+This keeps the cross-repo knowledge base synced without manual runs.
+
+---
+
 ## Quick checklist
 
 - [ ] Copy `env.example` → `.env` in `~/smuggler` and `~/smuggler/consultant-package/technical/smuggler-ai-gm`.

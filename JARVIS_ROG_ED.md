@@ -98,6 +98,8 @@ npx clawdbot agent --session-id "ally" --message "Open github.com" --local
 
 Use the same `--session-id "ally"` to keep context in one conversation.
 
+**JARVIS as Product Manager for Beast-Mode:** Run CLI tests with JARVIS as PM to take over Beast-Mode and build an app that humans, AI agents, and developers love. Session `beast-mode-pm`; see [scripts/PM_BEAST_MODE_CLI.md](scripts/PM_BEAST_MODE_CLI.md). One-liner: `npx clawdbot agent --session-id "beast-mode-pm" --message "Take over Beast-Mode as PM and work with me to build an app that humans, AI agents and developers will love." --local`. Or run: `powershell -ExecutionPolicy Bypass -File scripts\test-pm-beast-mode.ps1`.
+
 **Run the big one (Ollama, local):** Set GPU to 6 GB in Armoury Crate, then `ollama pull llama3.1` and `ollama run llama3.1`. For JARVIS, set primary model to `ollama/llama3.1` in `clawdbot.json` — see [ROG_ALLY_SETUP.md — Run the big one](./ROG_ALLY_SETUP.md#run-the-big-one-llama-31-8b).
 
 **Model split (chat vs background):** Use **Groq** for fast interactive chat (Discord, web, CLI) and **Ollama** for background agents and tasks (more economical, local). In `clawdbot.json`: set `agents.defaults.model.primary` to `groq/llama-3.1-8b-instant` (or another Groq model) and `agents.defaults.subagents.model` to `ollama/llama3.1`. Chat uses the primary model; subagents (e.g. `sessions_spawn`, background research) use the subagent model. Requires `GROQ_API_KEY` in `.env` and Ollama running for subagent tasks.

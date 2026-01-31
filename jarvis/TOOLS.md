@@ -65,6 +65,21 @@ Tools and skills JARVIS can use. Call the appropriate tool when the user asks; t
 
 ---
 
+## Repo Knowledge (Cross-Repo RAG)
+
+**Skill:** `repo-knowledge` (installed). Semantic search and summaries across repairman29 repos.
+
+| Tool | When to use |
+|------|--------------|
+| `repo_search` | "search all repos for OAuth refresh", "find embedding code in echeo" |
+| `repo_summary` | "summarize BEAST-MODE", "what is smuggler?" |
+| `repo_file` | "show me file chunks from repo X path Y" |
+| `repo_map` | "repo map for JARVIS" |
+
+**Env:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (preferred) or `SUPABASE_ANON_KEY`.
+
+---
+
 ## Clipboard History
 
 **Skill:** `clipboard-history` (installed). Intelligent clipboard management.
@@ -157,3 +172,41 @@ Tools and skills JARVIS can use. Call the appropriate tool when the user asks; t
 | `install_skill` | "install the GitHub skill", "add weather skill" |
 | `manage_skills` | "list my skills", "update all skills", "disable music skill" |
 | `skill_analytics` | "what skills are trending?", "skill recommendations" |
+
+---
+
+## GitHub (PAT — Repos, Issues, PRs, Workers)
+
+**Skill:** `github` (installed). Connect with GITHUB_TOKEN to list repos, manage issues/PRs, and trigger workflow_dispatch (workers/subagents).
+
+**Env:** `GITHUB_TOKEN` in `~/.clawdbot/.env` or `%USERPROFILE%\.clawdbot\.env` (do not commit).
+
+| Tool | When to use |
+|------|--------------|
+| `github_status` | "Is GitHub connected?", "check GitHub token" |
+| `github_repos` | "list my repos", "repos for org X" |
+| `github_issues` | "create issue in owner/repo", "comment on issue #5", "list open issues" |
+| `github_pulls` | "list open PRs", "create PR from branch X", "get PR #3" |
+| `github_workflow_dispatch` | "trigger deploy workflow", "run the worker on main", drive workers/subagents |
+| `github_branches` | "branches in owner/repo" |
+| `github_workflows` | "what workflows exist in this repo?" (to find workflow_id for dispatch) |
+
+---
+
+## Repairman29 Repo Automation (CLI / Scripts)
+
+Use these **repo scripts** for operations, deployment, and background work. Prefer these over ad‑hoc commands when the task matches.
+
+| Command / Script | When to use |
+|------|-------------|
+| `node scripts/jarvis-admin.js` | Full deployment, repo configuration, releases, community setup, health checks. |
+| `node scripts/manage-website.js` | GitHub Pages status, build health, site metrics, content refresh. |
+| `node scripts/optimize-jarvis.js` | Performance cleanup, cache cleanup, workflow optimization. |
+| `node scripts/setup-wizard.js` | Guided setup for new machines or clean installs. |
+| `bash scripts/deploy-jarvis.sh` | End‑to‑end deploy to GitHub + Pages (Linux/macOS). |
+| `powershell -ExecutionPolicy Bypass -File scripts\\test-3-questions.ps1` | Quick CLI sanity check (agent responsiveness). |
+| `powershell -ExecutionPolicy Bypass -File scripts\\test-pm-beast-mode.ps1` | JARVIS as PM for Beast-Mode (3 prompts: mission, PRD outline, next action). See scripts/PM_BEAST_MODE_CLI.md. |
+| `npx clawdbot agent --session-id "beast-mode-pm" --message \"...\" --local` | Run JARVIS as product manager for Beast-Mode; use same session for context. |
+| `npx clawdbot gateway run` | Run gateway locally for interactive ops. |
+| `npx clawdbot agent --session-id <id> --message \"...\" --local` | Run a single agent turn in CLI. |
+| `npx clawdbot message send --channel discord --target user:<id> --message \"...\"` | Send a message to Discord via CLI (delivery check). |

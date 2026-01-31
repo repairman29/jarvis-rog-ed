@@ -1,0 +1,110 @@
+{
+  "name": "github",
+  "version": "1.0.0",
+  "description": "Connect to GitHub with PAT: list repos, manage issues and PRs, trigger workflow_dispatch (workers/subagents)",
+  "env": ["GITHUB_TOKEN"],
+  "tools": [
+    {
+      "name": "github_status",
+      "description": "Check if GitHub integration is working. Returns whether GITHUB_TOKEN is set and API is reachable.",
+      "parameters": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "github_repos",
+      "description": "List repositories for the authenticated user or an organization. Use for discovering repos to drive work.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "owner": { "type": "string", "description": "User or org (e.g. repairman29). Omit for current user repos." },
+          "type": { "type": "string", "description": "Filter: all, owner, member, public, private", "enum": ["all", "owner", "member", "public", "private"], "default": "all" },
+          "sort": { "type": "string", "description": "Sort by updated, created, pushed, full_name", "enum": ["updated", "created", "pushed", "full_name"], "default": "updated" },
+          "per_page": { "type": "number", "description": "Max repos to return (default 30)", "default": 30 }
+        }
+      }
+    },
+    {
+      "name": "github_issues",
+      "description": "List, create, or comment on issues. Use to drive work items and track tasks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "description": "Action to perform", "enum": ["list", "create", "comment", "get"], "default": "list" },
+          "owner": { "type": "string", "description": "Repo owner (required for repo operations)" },
+          "repo": { "type": "string", "description": "Repo name" },
+          "title": { "type": "string", "description": "Issue title (for create)" },
+          "body": { "type": "string", "description": "Issue or comment body" },
+          "issue_number": { "type": "number", "description": "Issue number (for comment or get)" },
+          "state": { "type": "string", "description": "Filter: open, closed, all", "enum": ["open", "closed", "all"], "default": "open" },
+          "labels": { "type": "array", "items": { "type": "string" }, "description": "Labels for new issue" },
+          "per_page": { "type": "number", "description": "Max issues to return", "default": 20 }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "github_pulls",
+      "description": "List or create pull requests. Use to drive code review and merge workflows.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "description": "Action", "enum": ["list", "create", "get"], "default": "list" },
+          "owner": { "type": "string", "description": "Repo owner" },
+          "repo": { "type": "string", "description": "Repo name" },
+          "title": { "type": "string", "description": "PR title (for create)" },
+          "body": { "type": "string", "description": "PR body (for create)" },
+          "head": { "type": "string", "description": "Head branch (e.g. user:feature or branch name, for create)" },
+          "base": { "type": "string", "description": "Base branch (default main)", "default": "main" },
+          "pull_number": { "type": "number", "description": "PR number (for get)" },
+          "state": { "type": "string", "description": "Filter: open, closed, all", "enum": ["open", "closed", "all"], "default": "open" },
+          "per_page": { "type": "number", "description": "Max PRs to return", "default": 20 }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "github_workflow_dispatch",
+      "description": "Trigger a GitHub Actions workflow (workflow_dispatch). Use to run workers, subagents, or automation in a repo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "owner": { "type": "string", "description": "Repo owner" },
+          "repo": { "type": "string", "description": "Repo name" },
+          "workflow_id": { "type": "string", "description": "Workflow file name (e.g. deploy.yml) or workflow ID" },
+          "ref": { "type": "string", "description": "Branch to run workflow on (e.g. main)", "default": "main" },
+          "inputs": {
+            "type": "object",
+            "description": "Optional inputs for the workflow (key-value)",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "required": ["owner", "repo", "workflow_id"]
+      }
+    },
+    {
+      "name": "github_branches",
+      "description": "List branches in a repository. Useful before creating PRs or dispatching workflows.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "owner": { "type": "string", "description": "Repo owner" },
+          "repo": { "type": "string", "description": "Repo name" },
+          "per_page": { "type": "number", "description": "Max branches", "default": 30 }
+        },
+        "required": ["owner", "repo"]
+      }
+    },
+    {
+      "name": "github_workflows",
+      "description": "List workflow files in a repo. Use to find workflow_id for workflow_dispatch.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "owner": { "type": "string", "description": "Repo owner" },
+          "repo": { "type": "string", "description": "Repo name" },
+          "per_page": { "type": "number", "description": "Max workflows", "default": 30 }
+        },
+        "required": ["owner", "repo"]
+      }
+    }
+  ]
+}

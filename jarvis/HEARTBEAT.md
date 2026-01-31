@@ -1,13 +1,20 @@
 # Heartbeat — JARVIS ROG Ed.
 
 Short checklist for periodic heartbeat runs. Keep this file tiny to avoid token burn.
+Heartbeat should **drive production**: check queues, launch subagents, and advance shipping.
 
-## Today
-- [ ] Check if user needs anything (reply HEARTBEAT_OK if nothing)
-- [ ] Note any pending reminders or follow-ups from recent chats
+## Today (Production Mode — Beast-Mode focus)
+- [ ] Check if user needs anything (if no action items, continue checklist)
+- [ ] Focus repo: **BEAST-MODE** (primary). Defer other repos unless asked.
+- [ ] Scan for pending tasks: BEAST-MODE issues/PRs, recent failures, blocked threads
+- [ ] If GitHub is available: run `github_status`; if OK, pick 1 BEAST-MODE action (issue, PR, workflow_dispatch)
+- [ ] If background work is needed: spawn subagents with clear deliverables and ETA
+- [ ] Note any follow-ups from recent chats (Discord, CLI, repo ops)
 
 ## Optional
 - [ ] Summarize system health if performance-monitor is enabled
-- [ ] Suggest one quick win (e.g. "Want me to take a screenshot of your setup?")
+- [ ] Suggest one quick win (e.g. "Run CLI test", "Trigger workflow", "Draft PRD")
 
-If nothing needs attention, reply with: **HEARTBEAT_OK**
+## Response rule
+- If **no actionable items**: reply **HEARTBEAT_OK**
+- Otherwise: reply **HEARTBEAT_REPORT** with 3–5 bullets and a next action

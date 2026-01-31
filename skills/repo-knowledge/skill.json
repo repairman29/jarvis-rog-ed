@@ -1,0 +1,57 @@
+{
+  "name": "repo-knowledge",
+  "version": "1.0.0",
+  "description": "Cross-repo knowledge base with semantic search, summaries, and repo maps.",
+  "env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY"],
+  "tools": [
+    {
+      "name": "repo_search",
+      "description": "Semantic search across repairman29 repos with optional repo filter.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Search query"},
+          "repo": {"type": "string", "description": "Optional repo name filter"},
+          "limit": {"type": "number", "description": "Number of results (default 6)", "default": 6}
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "repo_summary",
+      "description": "Get the indexed summary for a repo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "repo": {"type": "string", "description": "Repo name"}
+        },
+        "required": ["repo"]
+      }
+    },
+    {
+      "name": "repo_file",
+      "description": "Fetch matching indexed chunks for a file path inside a repo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "repo": {"type": "string", "description": "Repo name"},
+          "path": {"type": "string", "description": "File path (exact or partial)"},
+          "limit": {"type": "number", "description": "Number of chunks (default 4)", "default": 4}
+        },
+        "required": ["repo", "path"]
+      }
+    },
+    {
+      "name": "repo_map",
+      "description": "Return a lightweight map of repo structure and key files.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "repo": {"type": "string", "description": "Repo name"},
+          "limit": {"type": "number", "description": "Max file paths (default 60)", "default": 60}
+        },
+        "required": ["repo"]
+      }
+    }
+  ]
+}

@@ -514,6 +514,18 @@ Welcome to the future of conversational productivity! 🧠✨
     });
   },
 
+  async safety() {
+    log('🛡️  JARVIS Safety Net', 'purple');
+    log('====================', 'purple');
+    
+    try {
+      execCommand('node scripts/jarvis-safety-net.js');
+      log('\n✅ Safety Net completed', 'green');
+    } catch (error) {
+      log(`❌ Safety Net failed: ${error.message}`, 'red');
+    }
+  },
+
   async help() {
     console.log(`
 🧠 JARVIS Administrative CLI
@@ -529,6 +541,7 @@ Commands:
   release     Create and manage GitHub releases
   optimize    Run performance optimization and analysis
   monitor     Real-time system monitoring dashboard
+  safety      Run Safety Net health snapshot
   help        Show this help message
 
 Examples:
@@ -536,6 +549,7 @@ Examples:
   node scripts/jarvis-admin.js status      # Quick status overview
   node scripts/jarvis-admin.js analytics   # Traffic and usage data
   node scripts/jarvis-admin.js website     # Website maintenance
+  node scripts/jarvis-admin.js safety      # Unified health snapshot
 
 🌐 Website: ${SITE_URL}
 📦 Repository: https://github.com/${GITHUB_USER}/${REPO_NAME}

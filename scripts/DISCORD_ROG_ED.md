@@ -40,12 +40,39 @@ Replace `paste_your_bot_token_here` with the token you copied. No quotes. Save t
 **If you see "Private application cannot have a default authorization link":**  
 Go to **OAuth2** → **Default Authorization Link** → set to **None** → Save. Then use URL Generator again.
 
+**Checkboxes don't stay checked (URL Generator):**  
+The URL Generator does **not** save your choices — it only builds the link. Check `bot` and `applications.commands` under Scopes, check the permissions you want under Bot Permissions, then **copy the Generated URL right away** and open it in a new tab to authorize. If the boxes uncheck when you click elsewhere, use the **manual invite URL** instead:
+
+1. Get your **Application ID** (a long **number**, e.g. `146696551002970246`): Developer Portal → your app → **OAuth2** → **General** (or the app’s **General Information** page) → copy **Application ID**. Do **not** leave the literal text `YOUR_APPLICATION_ID` in the URL.
+2. Open this URL in your browser (replace the number with your Application ID):
+   ```
+   https://discord.com/api/oauth2/authorize?client_id=146696551002970246&permissions=8&scope=bot%20applications.commands
+   ```
+   Use your own Application ID in place of `146696551002970246`.
+   - `permissions=8` = **Administrator** (all permissions).  
+   - Or use `permissions=68608` for only **View Channels**, **Send Messages**, and **Read Message History** (enough for DMs).
+3. Choose your server → **Authorize**.
+
+**Intents (Bot tab)** do save: **Bot** → **Privileged Gateway Intents** → turn on **Message Content Intent** and **Server Members Intent** → **Save Changes**. If those don’t stick, try another browser or clear cache.
+
 ### 5. Restart the gateway
 
 - Stop the gateway: close its window or run `npx clawdbot gateway stop`.
 - Start it again: double‑click **`scripts\start-jarvis-ally.bat`** or run `npx clawdbot gateway run` from the repo folder.
 
-### 6. Pair with JARVIS (first DM)
+### 6. Check token / channel via CLI or API
+
+- **Clawdbot CLI** (channel state, no “scopes”):
+  - `npx clawdbot doctor` — Discord: ok/fail, session store path.
+  - `npx clawdbot status` — Discord ON/OFF, token present, sessions (including Discord user ID alias).
+- **Discord API** (verify token, list guilds; scopes not returned by API):
+  - From repo: `node scripts\check-discord-bot.js`
+  - Reads `DISCORD_BOT_TOKEN` from `%USERPROFILE%\.clawdbot\.env`, calls Discord API `GET /users/@me` and `GET /users/@me/guilds`, prints bot username/id and servers.
+- **Scopes and intents** (not queryable via API — set in the portal):
+  - **Scopes:** [Developer Portal](https://discord.com/developers/applications) → your app → **OAuth2** → **URL Generator** → check `bot` and `applications.commands` when generating the invite.
+  - **Intents:** **Bot** → **Privileged Gateway Intents** → **Message Content Intent** = On, **Server Members Intent** = On → **Save Changes**.
+
+### 7. Pair with JARVIS (first DM)
 
 1. In Discord, find your bot in the server member list (or in a channel) → **Message** to open a DM.
 2. Send any message (e.g. "Hello").
@@ -58,6 +85,8 @@ Go to **OAuth2** → **Default Authorization Link** → set to **None** → Save
 4. Send another message; JARVIS should reply.
 
 After that, you can chat with JARVIS from Discord (and from your phone if you use the Discord app).
+
+**Bot says "doesn't have access to GitHub":** The GitHub skill needs `GITHUB_TOKEN` in `%USERPROFILE%\.clawdbot\.env`. Add it (do not commit), restart the gateway, then try again in Discord. To verify from CLI: `npx clawdbot agent --session-id discord-check --message "Check GitHub status" --local`.
 
 ---
 
